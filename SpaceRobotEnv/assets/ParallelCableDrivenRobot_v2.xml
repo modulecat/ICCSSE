@@ -1,0 +1,299 @@
+<!-- Reference文档中双引号""中的值即为默认值-->
+<mujoco model="multibodyrobot">
+    <compiler angle="degree" balanceinertia="true"/>
+    <!-- 最顶层的defaults class是默认被定义的(即使其中没有内容)，class元素被省略时，顶层的defaults class默认命名为"main"-->
+    <default>
+        <!-- 定义关节参数预设值：电枢系数，阻尼系数，关节转角限制-->
+        <joint armature="1" damping="0"/>
+        <default class="joint_h">
+            <joint type="hinge" axis="1 0 0" pos="0 0 -0.2" stiffness="2.0001234" damping="1.05"/>
+        </default>
+        <default class="joint_v"> 
+            <joint type="hinge" axis="0 1 0" pos="0 0 -0.2" stiffness="2.0001234" damping="1.05"/>
+        </default>
+        <default class="geom_armbar_odd1">
+            <geom type="cylinder" size="0.01 0.2" rgba="0.2 0.6 0.8 1"/>
+        </default>
+        <default class="geom_armbar_even1">
+            <geom type="cylinder" size="0.01 0.2" rgba="0.4 0.8 0.3 1"/>
+        </default>
+        <default class="geom_cable_plate">
+            <geom type="cylinder" size="0.1 0.001" rgba="0.4 0.03 0.45 1"/>
+        </default>
+        <site rgba="0.5 0.6 0.5 1"/>
+    </default>
+
+    <option gravity="0 0 0" timestep="0.0025" tolerance="1e-10" integrator="RK4"/>
+
+    <asset>
+        <texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1" />
+		<texture name="grid" type="2d" builtin="checker" rgb1=".3 .35 .3" rgb2=".4 .5 .6" width="300" height="300" mark="edge" markrgb=".2 .3 .4" />
+		<material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2" />
+    </asset>
+
+    <worldbody>
+        <light cutoff="100" diffuse="1 1 1" dir="-0 0 -1.3" directional="true" exponent="1" pos="0 0 1.3" specular=".1 .1 .1"/>
+        <body name="base_body" pos="0 0 0"><!-- body 内的子标签的位姿均相对于body坐标系-->
+            <!-- geom的pos,euler均相对于body的坐标系，姿态除euler外仍有多种表述方式，但都会被mujoco转化为单位四元数-->
+            <geom name="base" type="box" size="0.3 0.3 0.3" rgba="0.3 0.5 0.7 0.5" pos="0 0 0" euler="0 0 0"/>
+            <!-- <geom name="sailboard1" type="box" size="0.5 0.2 0.01" rgba="0.5 0.3 0.5 1" pos="0 0 0.65" euler="0 90 0"/> -->
+            <!-- <geom name="sailboard2" type="box" size="0.5 0.2 0.01" rgba="0.5 0.3 0.5 1" pos="0 0 -0.65" euler="0 -90 0"/> -->
+            <joint name="base_joint" type="free" /><!-- 关节类型默认为hinge-->
+            <inertial mass="500" pos="0 0 0" diaginertia="40 35 100" />
+
+            <body name="link_left_base" pos="0.5 0 0" euler="0 90 0">
+                <geom type="cylinder" size="0.01 0.2" rgba="0.2 0.6 0.8 1"/>
+                <geom class="geom_cable_plate"/>
+                <inertial mass="1.18" pos="0 0 0" diaginertia="0.016 0.016 0.00037"/>
+                
+                <!-- 关节1绳驱模块-->
+                <body pos=" 0.02  0.005 -0.1">
+                    <geom type="cylinder" size="0.001 0.001"/>
+                    <joint name="slide_1_1" type="slide" axis="0 0 1"/>
+                    <site name="slide_1_1"/>
+                </body>
+                <body pos="-0.02  0.005 -0.1">
+                    <geom type="cylinder" size="0.001 0.001"/>
+                    <joint name="slide_1_2" type="slide" axis="0 0 1"/>
+                    <site name="slide_1_2"/>
+                </body>
+                <body pos="-0.02 -0.005 -0.1">
+                    <geom type="cylinder" size="0.001 0.001"/>
+                    <joint name="slide_1_3" type="slide" axis="0 0 1"/>
+                    <site name="slide_1_3"/>
+                </body>
+                <body pos=" 0.02 -0.005 -0.1">
+                    <geom type="cylinder" size="0.001 0.001"/>
+                    <joint name="slide_1_4" type="slide" axis="0 0 1"/>
+                    <site name="slide_1_4"/>
+                </body>
+
+
+                <!-- joint<->base -->
+                <site name="s_j_b_1" pos=" 0.02  0.005 -0.02"/>
+                <site name="s_j_b_2" pos="-0.02  0.005 -0.02"/>
+                <site name="s_j_b_3" pos="-0.02 -0.005 -0.02"/>
+                <site name="s_j_b_4" pos=" 0.02 -0.005 -0.02"/>
+                <!-- base<->1 -->
+                <site name="s_b_1_1" pos=" 0.1 0 0"/>
+                <site name="s_b_1_2" pos="-0.1 0 0"/>               
+
+                <body name="link1_1" pos="0 0 0.4" euler="0 0 0">
+                    <geom class="geom_armbar_even1"/> 
+                    <geom class="geom_cable_plate"/>
+                    <joint name="joint_h1_1" class="joint_h"/>
+                    <joint name="joint_v1_1" class="joint_v"/>
+                    
+                    <!-- base<->1 -->
+                    <site name="s_1_b_1" pos=" 0.071  0.071 0"/>
+                    <site name="s_1_b_2" pos="-0.071  0.071 0"/>
+                    <site name="s_1_b_3" pos="-0.071 -0.071 0"/>
+                    <site name="s_1_b_4" pos=" 0.071 -0.071 0"/>
+
+                    <!-- 关节2绳驱模块 -->
+                    <body pos=" 0.02  0.005 -0.1">
+                        <geom type="cylinder" size="0.001 0.001"/>
+                        <joint name="slide_2_1" type="slide" axis="0 0 1"/>
+                        <site name="slide_2_1"/>
+                    </body>
+                    <body pos="-0.02  0.005 -0.1">
+                        <geom type="cylinder" size="0.001 0.001"/>
+                        <joint name="slide_2_2" type="slide" axis="0 0 1"/>
+                        <site name="slide_2_2"/>
+                    </body>
+                    <body pos="-0.02 -0.005 -0.1">
+                        <geom type="cylinder" size="0.001 0.001"/>
+                        <joint name="slide_2_3" type="slide" axis="0 0 1"/>
+                        <site name="slide_2_3"/>
+                    </body>
+                    <body pos=" 0.02 -0.005 -0.1">
+                        <geom type="cylinder" size="0.001 0.001"/>
+                        <joint name="slide_2_4" type="slide" axis="0 0 1"/>
+                        <site name="slide_2_4"/>
+                    </body>
+
+                    <!-- joint<->1-->
+                    <site name="s_j_1_1" pos=" 0.02  0.005 -0.02"/>
+                    <site name="s_j_1_2" pos="-0.02  0.005 -0.02"/>
+                    <site name="s_j_1_3" pos="-0.02 -0.005 -0.02"/>
+                    <site name="s_j_1_4" pos=" 0.02 -0.005 -0.02"/>
+                    <!-- 1<->2 -->
+                    <site name="s_1_2_1" pos=" 0.1 0 0"/>
+                    <site name="s_1_2_2" pos="-0.1 0 0"/>
+                    <inertial mass="1.18" pos="0 0 0" diaginertia="0.016 0.016 0.00037" />
+
+                    <body name="link1_2" pos="0 0 0.4" euler="0 0 0">
+                        <geom class="geom_armbar_odd1"/>
+                        <geom class="geom_cable_plate"/>
+                        <joint name="joint_h1_2" class="joint_h"/>
+                        <joint name="joint_v1_2" class="joint_v"/>
+
+                        <!-- 1<->2 -->
+                        <site name="s_2_1_1" pos=" 0.071  0.071 0"/>
+                        <site name="s_2_1_2" pos="-0.071  0.071 0"/>
+                        <site name="s_2_1_3" pos="-0.071 -0.071 0"/>
+                        <site name="s_2_1_4" pos=" 0.071 -0.071 0"/>
+
+                        <!-- 关节3绳驱模块 -->
+                        <body pos="0.02 0.005 -0.1">
+                            <geom type="cylinder" size="0.001 0.001"/>
+                            <joint name="slide_3_1" type="slide" axis="0 0 1"/>
+                            <site name="slide_3_1"/>
+                        </body>
+                        <body pos="-0.02 0.005 -0.1">
+                            <geom type="cylinder" size="0.001 0.001"/>
+                            <joint name="slide_3_2" type="slide" axis="0 0 1"/>
+                            <site name="slide_3_2"/>
+                        </body>
+                        <body pos="-0.02 -0.005 -0.1">
+                            <geom type="cylinder" size="0.001 0.001"/>
+                            <joint name="slide_3_3" type="slide" axis="0 0 1"/>
+                        <site name="slide_3_3"/>
+                        </body>
+                        <body pos="0.02 -0.005 -0.1">
+                            <geom type="cylinder" size="0.001 0.001"/>
+                            <joint name="slide_3_4" type="slide" axis="0 0 1"/>
+                            <site name="slide_3_4"/>
+                        </body>
+
+                        <!-- joint<->2-->
+                        <site name="s_j_2_1" pos="0.02 0.005 -0.02"/>
+                        <site name="s_j_2_2" pos="-0.02 0.005 -0.02"/>
+                        <site name="s_j_2_3" pos="-0.02 -0.005 -0.02"/>
+                        <site name="s_j_2_4" pos="0.02 -0.005 -0.02"/>
+
+                        <!-- 2<->3 -->
+                        <site name="s_2_3_1" pos=" 0.1 0 0"/>
+                        <site name="s_2_3_2" pos="-0.1 0 0"/>
+                        <inertial mass="1.18" pos="0 0 0" diaginertia="0.016 0.016 0.00037" />
+
+                        <body name="link1_3" pos="0 0 0.4" euler="0 0 0">
+                            <geom class="geom_armbar_even1"/> 
+                            <geom class="geom_cable_plate"/>
+                            <site name="point_end" size="0.01 0 0" pos="0 0 0.2" rgba="0.2 0.2 1 1"/>
+                            <joint name="joint_h1_3" class="joint_h" pos="0 0 -0.2"/>
+                            <joint name="joint_v1_3" class="joint_v" pos="0 0 -0.2"/>
+
+                            <!-- 2<->3 -->
+                            <site name="s_3_2_1" pos=" 0.071  0.071 0"/>
+                            <site name="s_3_2_2" pos="-0.071  0.071 0"/>
+                            <site name="s_3_2_3" pos="-0.071 -0.071 0"/>
+                            <site name="s_3_2_4" pos=" 0.071 -0.071 0"/>
+                            <inertial mass="1.18" pos="0 0 0" diaginertia="0.016 0.016 0.00037" />
+
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        <!-- 设置目标点及障碍-->
+        <body name="object_point"  pos="1.6 0.4 0" >
+            <site name="object_point" size="0.05 0.05 0.05" pos="0 0 0" rgba="0 0 1 1"/>
+        </body>
+
+    </worldbody>
+    <tendon>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_1_1"/>
+            <site site="s_j_b_1"/>
+            <site site="s_b_1_1"/>
+            <site site="s_1_b_1"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_1_4"/>
+            <site site="s_j_b_4"/>
+            <site site="s_b_1_1"/>
+            <site site="s_1_b_4"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_1_2"/>
+            <site site="s_j_b_2"/>
+            <site site="s_b_1_2"/>
+            <site site="s_1_b_2"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_1_3"/>
+            <site site="s_j_b_3"/>
+            <site site="s_b_1_2"/>
+            <site site="s_1_b_3"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_2_1"/>
+            <site site="s_j_1_1"/>
+            <site site="s_1_2_1"/>
+            <site site="s_2_1_1"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_2_4"/>
+            <site site="s_j_1_4"/>
+            <site site="s_1_2_1"/>
+            <site site="s_2_1_4"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_2_2"/>
+            <site site="s_j_1_2"/>
+            <site site="s_1_2_2"/>
+            <site site="s_2_1_2"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_2_3"/>
+            <site site="s_j_1_3"/>
+            <site site="s_1_2_2"/>
+            <site site="s_2_1_3"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_3_1"/>
+            <site site="s_j_2_1"/>
+            <site site="s_2_3_1"/>
+            <site site="s_3_2_1"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_3_4"/>
+            <site site="s_j_2_4"/>
+            <site site="s_2_3_1"/>
+            <site site="s_3_2_4"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_3_2"/>
+            <site site="s_j_2_2"/>
+            <site site="s_2_3_2"/>
+            <site site="s_3_2_2"/>
+        </spatial>
+        <spatial range="0 0.55" limited="true" width="0.002" rgba="0.95 0.3 0.3 1" >
+            <site site="slide_3_3"/>
+            <site site="s_j_2_3"/>
+            <site site="s_2_3_2"/>
+            <site site="s_3_2_3"/>
+        </spatial>
+    </tendon>
+    <actuator>
+        <!-- link1's actuator-->
+        <!-- <general  ctrllimited="true" ctrlrange="-1 1" forcelimited="true" forcerange="-10 10" joint="slide_1_1" name="slide_1_1"  />
+		<general  ctrllimited="true" ctrlrange="-1 1" forcelimited="true" forcerange="-10 10" joint="slide_1_2" name="slide_1_2"  />
+		<general  ctrllimited="true" ctrlrange="-1 1" forcelimited="true" forcerange="-10 10" joint="slide_1_3" name="slide_1_3"  />
+		<general  ctrllimited="true" ctrlrange="-1 1" forcelimited="true" forcerange="-10 10" joint="slide_1_4" name="slide_1_4"  /> -->
+        <!-- <position joint="slide_1_1" name="slide_1_1" kp="5"  ctrllimited="true" ctrlrange="-0.5 0.1"/>
+        <position joint="slide_1_2" name="slide_1_2" kp="5"  ctrllimited="true" ctrlrange="-0.5 0.1"/> -->
+        <!-- <position joint="slide_1_1" name="slide_1_1" kp="8" biasprm="0 -8 -100" biastype="affine"/>
+        <position joint="slide_1_2" name="slide_1_2" kp="8" biasprm="0 -8 -100" biastype="affine"/> -->
+        <general joint="slide_1_1" name="slide_1_1" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_1_2" name="slide_1_2" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_1_3" name="slide_1_3" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_1_4" name="slide_1_4" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_2_1" name="slide_2_1" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_2_2" name="slide_2_2" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_2_3" name="slide_2_3" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_2_4" name="slide_2_4" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_3_1" name="slide_3_1" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_3_2" name="slide_3_2" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_3_3" name="slide_3_3" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <general joint="slide_3_4" name="slide_3_4" biasprm="0 -10 -1100" biastype="affine" gaintype="fixed" gainprm="8 0 0" dyntype="none" dynprm="1 0 0" ctrllimited="true" ctrlrange="-1 0" />
+        <!-- <position joint="slide_1_3" name="slide_1_3" kp="5"  />
+        <position joint="slide_1_4" name="slide_1_4" kp="5"  /> -->
+        <!-- <motor joint="slide_1_1" name="slide_1_1" />
+        <motor joint="slide_1_2" name="slide_1_2" />
+        <motor joint="slide_1_3" name="slide_1_3" />
+        <motor joint="slide_1_4" name="slide_1_4" /> -->
+    </actuator>
+</mujoco>
